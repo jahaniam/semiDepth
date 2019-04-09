@@ -46,6 +46,7 @@ python monodepth_main.py --mode train --model_name my_model --data_path ~/data/K
 ```
 For fine-tune from a checkpoint you should use `--retrain`.  
 For monitoring use `tensorboard` and point it to your `log_directory`.  
+To apply hotfix for gradient smoothness loss bug add `--do_gradient_fix` (we used this flag for all of our experiments)
   
 Please look at the [monodepth_main](monodepth_main.py) and [original monodepth github](https://github.com/mrharicot/monodepth) for all the available options.
 
