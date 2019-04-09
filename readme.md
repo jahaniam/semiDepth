@@ -63,7 +63,8 @@ This will create a file named invDepth.npy containing result.
 ## Evaluation on KITTI
 To evaluate eigen, we used 652 annotated images:  
 ```shell
-python2 utils/evaluate_kitti_depth.py --split eigen --predicted_disp_path models/eigen_finedTuned_cityscape_resnet50Forward/invDepth.npy  \
+python2 utils/evaluate_kitti_depth.py --split eigen --predicted_disp_path \
+models/eigen_finedTuned_cityscape_resnet50Forward/invDepth.npy  \
 --gt_path /home/datasets/ --garg_crop --invdepth_provided --test_file \
 utils/filenames/eigen_test_files_withGT.txt \
 --shared_index utils/filenames/eigen692_652_shared_index.txt
