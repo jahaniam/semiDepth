@@ -8,9 +8,10 @@ Tensorflow implementation of Semi-Supervised Monocular Depth Estimation with Lef
 <p align="center">
 <img src="https://github.com/a-jahani/semiDepth/blob/master/demo.gif" alt="semiDepth">
 </p>
+Link to full video: https://www.youtube.com/watch?v=7ldCPJ60abw
 
 **Semi-Supervised Monocular Depth Estimation with Left-Right Consistency Using Deep Neural Network**  
-Link to video: (https://www.youtube.com/watch?v=7ldCPJ60abw)
+
 
 ## Requirements
 This code was tested with Tensorflow 1.12, CUDA 9.0 and Ubuntu 16.04 and Gentoo.  
@@ -62,9 +63,10 @@ This will create a file named invDepth.npy containing result.
 ## Evaluation on KITTI
 To evaluate eigen, we used 652 annotated images:  
 ```shell
-python2 utils/evaluate_kitti_depth.py --split eigen --predicted_disp_path models/model_eigen_finedTunedOnCity_w150_b8eq16_forward_densewarp_dgf_e25_Annotated/invDepth.npy  \
+python2 utils/evaluate_kitti_depth.py --split eigen --predicted_disp_path models/eigen_finedTuned_cityscape_resnet50Forward/invDepth.npy  \
 --gt_path /home/datasets/ --garg_crop --invdepth_provided --test_file \
-utils/filenames/eigen_test_files_withGT.txt --shared_index utils/filenames/eigen692_652_shared_index.txt
+utils/filenames/eigen_test_files_withGT.txt \
+--shared_index utils/filenames/eigen692_652_shared_index.txt
 ```
 
 By running the code for `eigen_finedTuned_cityscape_resnet50Forward` and `invDepth.npy` you should get results below:
