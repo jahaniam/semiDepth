@@ -23,19 +23,22 @@ import tensorflow.contrib.slim as slim
 from monodepth_model import *
 from monodepth_dataloader import *
 from average_gradients import *
+import cv2
+import png
+from datetime import datetime
 
 parser = argparse.ArgumentParser(description='Monodepth TensorFlow implementation.')
 
 parser.add_argument('--mode',                      type=str,   help='train or test', default='train')
 parser.add_argument('--model_name',                type=str,   help='model name', default='monodepth')
-parser.add_argument('--encoder',                   type=str,   help='type of encoder, vgg or resnet50', default='vgg')
-parser.add_argument('--dataset',                   type=str,   help='dataset to train on, kitti, or cityscapes', default='kitti')
+parser.add_argument('--encoder',                   type=str,   help='type of encoder, vgg or resnet50', default='resnet50-forward')
+parser.add_argument('--dataset',                   type=str,   help='dataset to train on, kitti, or cityscapes or make3D', default='kitti')
 parser.add_argument('--data_path',                 type=str,   help='path to the data', required=True)
 parser.add_argument('--filenames_file',            type=str,   help='path to the filenames text file', required=True)
 parser.add_argument('--input_height',              type=int,   help='input height', default=256)
 parser.add_argument('--input_width',               type=int,   help='input width', default=512)
 parser.add_argument('--batch_size',                type=int,   help='batch size', default=8)
-parser.add_argument('--num_epochs',                type=int,   help='number of epochs', default=50)
+parser.add_argument('--num_epochs',                type=int,   help='number of epochs', default=25)
 parser.add_argument('--learning_rate',             type=float, help='initial learning rate', default=1e-4)
 parser.add_argument('--lr_loss_weight',            type=float, help='left-right consistency weight', default=1.0)
 parser.add_argument('--alpha_image_loss',          type=float, help='weight between SSIM and L1 in the image loss', default=0.85)
@@ -50,8 +53,64 @@ parser.add_argument('--log_directory',             type=str,   help='directory t
 parser.add_argument('--checkpoint_path',           type=str,   help='path to a specific checkpoint to load', default='')
 parser.add_argument('--retrain',                               help='if used with checkpoint_path, will restart training from step zero', action='store_true')
 parser.add_argument('--full_summary',                          help='if set, will keep more data for each summary. Warning: the file can become very large', action='store_true')
+parser.add_argument('--lidar_weight', type=float, help='weight of the Lidar loss', default=15.0)
+parser.add_argument('--save_visualized', help='save visualized results',  action='store_true')
+parser.add_argument('--save_official', help='save visualized results- for benchmark submission',  action='store_true')
+
+parser.add_argument('--do_gradient_fix', help='apply hotfix for gradient',  action='store_true', default='True')
 
 args = parser.parse_args()
+
+
+
+def visualize_colormap(mat, colormap=cv2.COLORMAP_JET):
+    min_val = np.amin(mat)
+    max_val = np.amax(mat)
+    min_val= 1/80.
+    max_val= 1./5.
+    mat[mat<min_val]=min_val
+    mat[mat>max_val]=max_val
+    mat_view = (mat - min_val) / (max_val - min_val)
+    mat_view *= 255
+    mat_view = mat_view.astype(np.uint8)
+    mat_view = cv2.applyColorMap(mat_view, colormap)
+
+    return mat_view
+
+
+def save_visualized_results(disparities,img, width, height,step):
+
+    img_dir_vis=args.checkpoint_path + '/output_vis'
+    if not os.path.exists(img_dir_vis):
+        os.makedirs(img_dir_vis)
+    print('saving ',img_dir_vis+'/'+str(step).zfill(10)+'.png')
+    cv2.imwrite(img_dir_vis+'/'+str(step).zfill(10)+'.png',img)
+
+    resized_disparity = cv2.resize(disparities, (width, height), interpolation=cv2.INTER_LINEAR)
+    im_view = visualize_colormap(resized_disparity)
+    cv2.imwrite(img_dir_vis+'/'+str(step).zfill(10)+'_disp.png',im_view)
+    return img_dir_vis
+    # cv2.imshow('I', im_view) # * width)
+    # cv2.waitKey(1)
+
+def save_official(invDepth,width,height,img_dir,img_name):
+    with open(img_dir+'/' + img_name, 'wb') as f:
+        pred_depths = (1.0 / invDepth).astype(np.float32)
+
+        pred_depths = cv2.resize(pred_depths, (width, height), interpolation=cv2.INTER_LINEAR)
+        pred_depths[np.isinf(pred_depths)] = 80.
+        pred_depths[pred_depths > 80.0] = 80.
+        pred_depths[pred_depths < 0.5] = 0.5
+
+        pred_depths *= 256
+
+        # pypng is used because cv2 cannot save uint16 format images
+        writer = png.Writer(width=width,
+                            height=height,
+                            bitdepth=16,
+                            greyscale=True)
+        writer.write(f, pred_depths.astype(np.uint16))
+
 
 def post_process_disparity(disp):
     _, h, w = disp.shape
@@ -95,10 +154,16 @@ def train(params):
         dataloader = MonodepthDataloader(args.data_path, args.filenames_file, params, args.dataset, args.mode)
         left  = dataloader.left_image_batch
         right = dataloader.right_image_batch
+        left_depth= dataloader.left_depth_batch
+        right_depth= dataloader.right_depth_batch
+        focal_length= dataloader.focal_length_batch
 
         # split for each gpu
         left_splits  = tf.split(left,  args.num_gpus, 0)
         right_splits = tf.split(right, args.num_gpus, 0)
+        left_depth_splits = tf.split(left_depth, args.num_gpus, 0)
+        right_depth_splits = tf.split(right_depth, args.num_gpus, 0)
+        focal_length_splits = tf.split(focal_length, args.num_gpus, 0)
 
         tower_grads  = []
         tower_losses = []
@@ -107,7 +172,7 @@ def train(params):
             for i in range(args.num_gpus):
                 with tf.device('/gpu:%d' % i):
 
-                    model = MonodepthModel(params, args.mode, left_splits[i], right_splits[i], reuse_variables, i)
+                    model = MonodepthModel(params, args.mode, left_splits[i], right_splits[i], left_depth_splits[i], right_depth_splits[i], focal_length_splits[i], reuse_variables, i)
 
                     loss = model.total_loss
                     tower_losses.append(loss)
@@ -182,7 +247,7 @@ def test(params):
     left  = dataloader.left_image_batch
     right = dataloader.right_image_batch
 
-    model = MonodepthModel(params, args.mode, left, right)
+    model = MonodepthModel(params, args.mode, left, right, None, None, None)
 
     # SESSION
     config = tf.ConfigProto(allow_soft_placement=True)
@@ -208,23 +273,48 @@ def test(params):
 
     print('now testing {} files'.format(num_test_samples))
     disparities    = np.zeros((num_test_samples, params.height, params.width), dtype=np.float32)
-    disparities_pp = np.zeros((num_test_samples, params.height, params.width), dtype=np.float32)
+
+    img_paths = open(args.filenames_file, "r").read().split('\n')
+    ####img
+    if args.save_official:
+        img_dir=args.checkpoint_path + '/output'+ datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        if not os.path.exists(img_dir):
+            os.makedirs(img_dir)
+    
     for step in range(num_test_samples):
-        disp = sess.run(model.disp_left_est[0])
+        disp = sess.run(model.invDepth_left_est[0])
         disparities[step] = disp[0].squeeze()
-        disparities_pp[step] = post_process_disparity(disp.squeeze())
+
+        if args.save_visualized:
+        #getting shape of the image
+            img_path = os.path.join(args.data_path, img_paths[step].split(' ')[0])
+            img = cv2.imread(img_path)
+            img_name = img_path.split('/')[-1]
+            # Change to png
+            img_name = img_name[:-3] + 'png'
+            height, width, channel = img.shape
+
+            if args.dataset=='make3D':
+                half_crop_height = width//5
+                img  =  img[height//2 - half_crop_height :height//2 + half_crop_height,:,:]
+            
+            img_dir_vis=save_visualized_results(disparities[step],img, img.shape[1], img.shape[0],step)
+            if args.save_official:
+                save_official(disparities[step],width,height,img_dir,img_name)
+
 
     print('done.')
+    # os.system("ffmpeg -f image2 -r 20 -i "+img_dir_vis+"/%10d_disp.png -vcodec libx264 -crf 22 "+img_dir_vis+"/video.mp4")
 
     print('writing disparities.')
     if args.output_directory == '':
         output_directory = os.path.dirname(args.checkpoint_path)
     else:
         output_directory = args.output_directory
-    np.save(output_directory + '/disparities.npy',    disparities)
-    np.save(output_directory + '/disparities_pp.npy', disparities_pp)
+    np.save(output_directory + '/invDepth.npy',    disparities)
 
     print('done.')
+
 
 def main(_):
 
@@ -241,7 +331,9 @@ def main(_):
         alpha_image_loss=args.alpha_image_loss,
         disp_gradient_loss_weight=args.disp_gradient_loss_weight,
         lr_loss_weight=args.lr_loss_weight,
-        full_summary=args.full_summary)
+        full_summary=args.full_summary,
+        lidar_weight=args.lidar_weight,
+        do_gradient_fix=args.do_gradient_fix)
 
     if args.mode == 'train':
         train(params)
