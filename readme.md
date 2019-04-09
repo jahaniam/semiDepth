@@ -21,7 +21,7 @@ Please download kitti depth annotaion dataset and place it with the correct fold
 This model requires rectified stereo pairs for training and registered annotated depth map.  
 There are two main datasets available: 
 ### [KITTI](http://www.cvlibs.net/datasets/kitti/raw_data.php) and [Cityscapes](https://www.cityscapes-dataset.com) 
-please follow [monodepth](https://github.com/mrharicot/monodepth) download instruction (we do not convert into jpg).
+please follow [monodepth](https://github.com/mrharicot/monodepth) download instruction (we do not convert into jpg). We only used stereo images for training the cityscape model.
 
 ### [KITTI Depth Annotated](http://www.cvlibs.net/download.php?file=data_depth_annotated.zip)
 You can download depth annotated data from this [link](http://www.cvlibs.net/download.php?file=data_depth_annotated.zip).
@@ -79,6 +79,7 @@ abs_rel,     sq_rel,        rms,    log_rms,     d1_all,         a1,         a2,
 You can download our pre-trained model from links below:
 
  [eigen_finedTuned_cityscape_resnet50Forward](https://drive.google.com/drive/folders/1U7KmrbXjTfFvuffwxPZ2XqN5zLKNHlpf?usp=sharing)
+ 
   [cityscape_resnet50Forward](https://drive.google.com/drive/folders/1U7KmrbXjTfFvuffwxPZ2XqN5zLKNHlpf?usp=sharing)
  
 ## Results
