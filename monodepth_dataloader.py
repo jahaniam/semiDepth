@@ -79,9 +79,8 @@ class MonodepthDataloader(object):
 
 
         elif mode == 'test':
-            # self.left_image_batch = tf.stack([left_image_o,  tf.image.flip_left_right(left_image_o)],  0)
-            self.left_image_batch= tf.expand_dims(left_image_o,axis=0)
-            self.left_image_batch.set_shape( [1, None, None, 3])
+            self.left_image_batch = tf.stack([left_image_o,  tf.image.flip_left_right(left_image_o)],  0)
+            self.left_image_batch.set_shape( [2, None, None, 3])
 
             if self.params.do_stereo:
                 self.right_image_batch = tf.stack([right_image_o,  tf.image.flip_left_right(right_image_o)],  0)

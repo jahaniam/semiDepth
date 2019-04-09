@@ -1,11 +1,16 @@
 import numpy as np
-import pandas as pd
+# import pandas as pd
 import os
-import cv, cv2
+import cv2
 from collections import Counter
 import pickle
+from scipy.interpolate import LinearNDInterpolator
+import glob
+import scipy.io
+from PIL import Image
 
-def compute_errors(gt, pred):
+
+def compute_errors(gt, pred,include_irmse=False):
     thresh = np.maximum((gt / pred), (pred / gt))
     a1 = (thresh < 1.25   ).mean()
     a2 = (thresh < 1.25 ** 2).mean()
@@ -13,6 +18,8 @@ def compute_errors(gt, pred):
 
     rmse = (gt - pred) ** 2
     rmse = np.sqrt(rmse.mean())
+    irmse = (1./gt - 1./pred) ** 2
+    irmse = np.sqrt(rmse.mean())
 
     rmse_log = (np.log(gt) - np.log(pred)) ** 2
     rmse_log = np.sqrt(rmse_log.mean())
@@ -20,8 +27,10 @@ def compute_errors(gt, pred):
     abs_rel = np.mean(np.abs(gt - pred) / gt)
 
     sq_rel = np.mean(((gt - pred)**2) / gt)
-
-    return abs_rel, sq_rel, rmse, rmse_log, a1, a2, a3
+    if include_irmse:
+        return abs_rel, sq_rel, rmse, rmse_log, a1, a2, a3,irmse
+    else:
+        return abs_rel, sq_rel, rmse, rmse_log, a1, a2, a3
 
 ###############################################################################
 #######################  KITTI
@@ -39,6 +48,38 @@ def load_gt_disp_kitti(path):
         disp = disp.astype(np.float32) / 256
         gt_disparities.append(disp)
     return gt_disparities
+
+
+def load_gt_depth_make3D(path):
+    gt_depths = []
+
+    gt_paths= sorted(glob.glob(os.path.join(path,"Test134Depth/Gridlaserdata/*.mat")))
+    # gt_paths= sorted(glob.glob(os.path.join(path,"Train400Depth/*.mat")))
+
+    for i in range(len(gt_paths)):
+        
+        gt_depth=scipy.io.loadmat(gt_paths[i])['Position3DGrid']
+        gt_depth=gt_depth[:,:,3]  #get the 4th dimension
+        # print ('original GT:', gt_depth.shape)
+        # gt_depth = cv2.resize(gt_depth, (1704,2272), interpolation=cv2.INTER_LINEAR)
+
+        ### cropping
+        o_height    = gt_depth.shape[0]
+        o_width   = gt_depth.shape[1]
+        half_crop_height = 8.5
+        gt_depth  =  gt_depth[18:35,:]
+        # gt_depth  =  gt_depth[18:39,:]
+
+        print('gt size now :',gt_depth.shape)
+        ####
+        # gt_depth = cv2.resize(gt_depth, (1704,680), interpolation=cv2.INTER_LINEAR)
+
+        # gt_depth = cv2.resize(gt_depth, (1704,852), interpolation=cv2.INTER_LINEAR)
+
+
+        gt_depths.append(gt_depth)
+
+    return np.array(gt_depths)
 
 def convert_disps_to_depths_kitti(gt_disparities, pred_disparities):
     gt_depths = []
@@ -74,6 +115,36 @@ def read_text_lines(file_path):
     lines = [l.rstrip() for l in lines]
     return lines
 
+
+def read_ground_truth_depth(filename):
+    im = Image.open(filename)
+    im = np.array(im).astype(np.float32)
+    im /= 256.0 # depth in metres
+    return im
+
+
+def read_depth_data(files,data_root):
+    gt_files = []
+    im_sizes = []
+    num_probs = 0
+
+    for filename in files:
+        filename = filename.split()[2]
+
+        im = filename
+
+        if os.path.isfile(data_root + filename):
+            gt_files.append(data_root + filename)
+            im_sizes.append(cv2.imread(data_root + im).shape[:2])
+           
+        else:
+            num_probs += 1
+            print('{} missing'.format(data_root + im))
+    print (num_probs, 'files missing')
+
+    return gt_files,im_sizes
+
+
 def read_file_data(files, data_root):
     gt_files = []
     gt_calib = []
@@ -101,7 +172,7 @@ def read_file_data(files, data_root):
         else:
             num_probs += 1
             print('{} missing'.format(data_root + im))
-    print num_probs, 'files missing'
+    print (num_probs, 'files missing')
 
     return gt_files, gt_calib, im_sizes, im_files, cams
 
@@ -218,7 +289,7 @@ def generate_depth_map(calib_dir, velo_file_name, im_shape, cam=2, interp=False,
         depth_interp = lin_interp(im_shape, velo_pts_im)
         return depth, depth_interp
     else:
-        return depth
+        return depth,0
 
 
 

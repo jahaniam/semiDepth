@@ -54,11 +54,10 @@ parser.add_argument('--checkpoint_path',           type=str,   help='path to a s
 parser.add_argument('--retrain',                               help='if used with checkpoint_path, will restart training from step zero', action='store_true')
 parser.add_argument('--full_summary',                          help='if set, will keep more data for each summary. Warning: the file can become very large', action='store_true')
 parser.add_argument('--lidar_weight', type=float, help='weight of the Lidar loss', default=15.0)
-parser.add_argument('--save_visualized', help='save visualized results',  action='store_true')
+parser.add_argument('--save_visualized', help='save visualized results- automatically finds the min and max value! it is not good for comparison! for comparison use the visualize in evaluation python file',  action='store_true')
 parser.add_argument('--save_official', help='save visualized results- for benchmark submission',  action='store_true')
 
-parser.add_argument('--do_gradient_fix', help='apply hotfix for gradient',  action='store_true', default='True')
-
+parser.add_argument('--do_gradient_fix', help='apply hotfix for gradient bug',  action='store_true', default='True')
 args = parser.parse_args()
 
 
@@ -78,7 +77,7 @@ def visualize_colormap(mat, colormap=cv2.COLORMAP_JET):
     return mat_view
 
 
-def save_visualized_results(disparities,img, width, height,step):
+def save_visualized_results(disparities_pp,img, width, height,step):
 
     img_dir_vis=args.checkpoint_path + '/output_vis'
     if not os.path.exists(img_dir_vis):
@@ -86,7 +85,7 @@ def save_visualized_results(disparities,img, width, height,step):
     print('saving ',img_dir_vis+'/'+str(step).zfill(10)+'.png')
     cv2.imwrite(img_dir_vis+'/'+str(step).zfill(10)+'.png',img)
 
-    resized_disparity = cv2.resize(disparities, (width, height), interpolation=cv2.INTER_LINEAR)
+    resized_disparity = cv2.resize(disparities_pp, (width, height), interpolation=cv2.INTER_LINEAR)
     im_view = visualize_colormap(resized_disparity)
     cv2.imwrite(img_dir_vis+'/'+str(step).zfill(10)+'_disp.png',im_view)
     return img_dir_vis
@@ -273,6 +272,7 @@ def test(params):
 
     print('now testing {} files'.format(num_test_samples))
     disparities    = np.zeros((num_test_samples, params.height, params.width), dtype=np.float32)
+    disparities_pp = np.zeros((num_test_samples, params.height, params.width), dtype=np.float32)
 
     img_paths = open(args.filenames_file, "r").read().split('\n')
     ####img
@@ -284,6 +284,7 @@ def test(params):
     for step in range(num_test_samples):
         disp = sess.run(model.invDepth_left_est[0])
         disparities[step] = disp[0].squeeze()
+        disparities_pp[step] = post_process_disparity(disp.squeeze())
 
         if args.save_visualized:
         #getting shape of the image
@@ -298,15 +299,15 @@ def test(params):
                 half_crop_height = width//5
                 img  =  img[height//2 - half_crop_height :height//2 + half_crop_height,:,:]
             
-            img_dir_vis=save_visualized_results(disparities[step],img, img.shape[1], img.shape[0],step)
+            img_dir_vis=save_visualized_results(disparities_pp[step],img, img.shape[1], img.shape[0],step)
             if args.save_official:
-                save_official(disparities[step],width,height,img_dir,img_name)
+                save_official(disparities_pp[step],width,height,img_dir,img_name)
 
 
     print('done.')
-    # os.system("ffmpeg -f image2 -r 20 -i "+img_dir_vis+"/%10d_disp.png -vcodec libx264 -crf 22 "+img_dir_vis+"/video.mp4")
+    #os.system("ffmpeg -f image2 -r 20 -i "+img_dir_vis+"/%10d_disp.png -vcodec libx264 -crf 22 "+img_dir_vis+"/video.mp4")
 
-    print('writing disparities.')
+    print('writing inverse depths.')
     if args.output_directory == '':
         output_directory = os.path.dirname(args.checkpoint_path)
     else:
