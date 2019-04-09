@@ -3,7 +3,10 @@ Under construction
 
 
 
-Tensorflow implementation of Semi-Supervised Monocular Depth Estimation with Left-Right Consistency Using Deep Neural Network
+Tensorflow implementation of Semi-Supervised Monocular Depth Estimation with Left-Right Consistency Using Deep Neural Network.
+
+#### disclaimer:
+ Most of this code is based on [monodepth](https://github.com/mrharicot/monodepth). We extended their work and added the lidar data into our training. The authors take no credit from Monodepth, therefore the licenses should remain intact. Please cite their work if you find them helpful.
 
 [comment]:<p align="center">
 [comment]:  <img src="http://visual.cs.ucl.ac.uk/pubs/monoDepth/monodepth_teaser.gif" alt="monodepth">
@@ -27,17 +30,10 @@ Training takes about 15 hours with the default parameters on the **kitti** split
 ## Data
 This model requires rectified stereo pairs for training.  
 There are two main datasets available: 
-### [KITTI](http://www.cvlibs.net/datasets/kitti/raw_data.php)
-We used two different split of the data, **kitti** and **eigen**, amounting for respectively 29000 and 22600 training samples, you can find them in the [filenames](utils/filenames) folder.  
-You can download the entire raw dataset by running:
-```shell
-wget -i utils/kitti_archives_to_download.txt -P ~/my/output/folder/
-```
-**Warning:** it weights about **175GB**, make sure you have enough space to unzip too!  
+### [KITTI](http://www.cvlibs.net/datasets/kitti/raw_data.php) and [Cityscapes](https://www.cityscapes-dataset.com) 
+please follow [monodepth](https://github.com/mrharicot/monodepth) download instruction.
+###  
 
-[comment]:### [Cityscapes](https://www.cityscapes-dataset.com)
-[comment]:You will need to register in order to download the data, which already has a train/val/test set with 22973 training images.  
-[comment]:We used `leftImg8bit_trainvaltest.zip`, `rightImg8bit_trainvaltest.zip`, `leftImg8bit_trainextra.zip` and `rightImg8bit_trainextra.zip` which weights **110GB**.
 
 ## Training
 
