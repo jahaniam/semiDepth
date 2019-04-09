@@ -3,7 +3,7 @@
 Tensorflow implementation of Semi-Supervised Monocular Depth Estimation with Left-Right Consistency Using Deep Neural Network.
 
 #### disclaimer:
- Most of this code is based on [monodepth](https://github.com/mrharicot/monodepth). We extended their work and added the lidar supervision into our training. The authors take no credit from Monodepth, therefore the licenses and namings conventions of the files should remain intact. Please cite their work if you find them helpful.
+ Most of this code is based on [monodepth](https://github.com/mrharicot/monodepth). We extended their work and added the lidar supervision into the training process. The authors take no credit from Monodepth, therefore the licenses and namings conventions of the files should remain intact. Please cite their work if you find them helpful.
 
 [comment]:<p align="center">
 [comment]:  <img src="http://visual.cs.ucl.ac.uk/pubs/monoDepth/monodepth_teaser.gif" alt="monodepth">
@@ -14,21 +14,20 @@ Tensorflow implementation of Semi-Supervised Monocular Depth Estimation with Lef
 
 ## Requirements
 This code was tested with Tensorflow 1.12, CUDA 9.0 and Ubuntu 16.04 and Gentoo.  
-Training takes about 15 hours with the default parameters on the **kitti** split on a single Nvidia 1080 Ti machine.
-
+Please download kitti depth annotaion dataset and place it with the correct folder naming.
 
 ## Data
-This model requires rectified stereo pairs for training.  
+This model requires rectified stereo pairs for training and registered annotated depth map.  
 There are two main datasets available: 
 ### [KITTI](http://www.cvlibs.net/datasets/kitti/raw_data.php) and [Cityscapes](https://www.cityscapes-dataset.com) 
 please follow [monodepth](https://github.com/mrharicot/monodepth) download instruction (do not convert into jpg).
 
 ### [KITTI Depth Annotated](http://www.cvlibs.net/download.php?file=data_depth_annotated.zip)
-You can download depth annotated data from this [website](http://www.cvlibs.net/download.php?file=data_depth_annotated.zip)
-Please go to "utils/filenames/eigen_train_files_withGT_annotated.txt" and make sure your folder names and structure of your folders are correct.
+You can download depth annotated data from this [link](http://www.cvlibs.net/download.php?file=data_depth_annotated.zip)
+Please go to `utils/filenames/eigen_train_files_withGT_annotated.txt` and make sure your folder names and structure of your folders matches the file.
 
-"eigen_train_files_withGT_annotated.txt" is structured as bellow:
-"left_image right_image left_annotated_depth right_annotated_depth"
+`eigen_train_files_withGT_annotated.txt` is structured as bellow:
+`left_image right_image left_annotated_depth right_annotated_depth`
 
 ## Training
 
@@ -68,14 +67,15 @@ python utils/evaluate_kitti_depth.py --split eigen --predicted_disp_path tmp/my_
 
 ## Models
 You can download our best pre-trained model from links below:
+
  [eigen_finedTuned_cityscape_resnet50Forward](https://drive.google.com/drive/folders/1U7KmrbXjTfFvuffwxPZ2XqN5zLKNHlpf?usp=sharing)
   [cityscape_resnet50Forward](https://drive.google.com/drive/folders/1U7KmrbXjTfFvuffwxPZ2XqN5zLKNHlpf?usp=sharing)
  
 ## Results
-You can download the npy file containing result for the 697 eigen test files from [here](https://drive.google.com/file/d/1yvZsO-ZMmlz0LK6vLnH513FPM70OS1wQ/view?usp=sharing). We are filtering the 45 images which there is no annotation depth map for it in our evaluation python code using the file "eigen692_652_shared_index.txt"
+You can download the npy file containing result for the 697 eigen test files from [here](https://drive.google.com/file/d/1yvZsO-ZMmlz0LK6vLnH513FPM70OS1wQ/view?usp=sharing). We are filtering the 45 images which there is no annotation depth map for it in our evaluation python code using the file `eigen692_652_shared_index.txt`
 
 ## Reference
-Tobe at IROS2019
+Under review at IROS2019
 ## Video
 [![Screenshot](https://img.youtube.com/vi/7ldCPJ60abw/0.jpg)](https://www.youtube.com/watch?v=7ldCPJ60abw)
 
