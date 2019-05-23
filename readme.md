@@ -1,6 +1,6 @@
 # semiDepth
 
-Tensorflow implementation of Semi-Supervised Monocular Depth Estimation with Left-Right Consistency Using Deep Neural Network.
+Tensorflow implementation of [Semi-Supervised Monocular Depth Estimation with Left-Right Consistency Using Deep Neural Network](https://arxiv.org/pdf/1905.07542.pdf).
 
 #### disclaimer:
  Most of this code is based on [monodepth](https://github.com/mrharicot/monodepth). We extended their work and added the lidar supervision into the training process. The authors take no credit from Monodepth, therefore namings conventions of the files are same and licenses should remain intact. Please cite their work if you find them helpful.
