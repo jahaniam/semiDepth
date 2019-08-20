@@ -50,7 +50,8 @@ def test_simple(params):
     """Test function."""
 
     left  = tf.placeholder(tf.float32, [2, args.input_height, args.input_width, 3])
-    model = MonodepthModel(params, "test", left, None)
+    # model = MonodepthModel(params, "test", left, None)
+    model = MonodepthModel(params, "test", left, None, None, None, None)
 
     input_image = scipy.misc.imread(args.image_path, mode="RGB")
     original_height, original_width, num_channels = input_image.shape
