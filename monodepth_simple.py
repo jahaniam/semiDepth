@@ -28,7 +28,7 @@ from average_gradients import *
 
 parser = argparse.ArgumentParser(description='Monodepth TensorFlow implementation.')
 
-parser.add_argument('--encoder',          type=str,   help='type of encoder, vgg or resnet50', default='vgg')
+parser.add_argument('--encoder',          type=str,   help='type of encoder, vgg or resnet50', default='resnet50-forward')
 parser.add_argument('--image_path',       type=str,   help='path to the image', required=True)
 parser.add_argument('--checkpoint_path',  type=str,   help='path to a specific checkpoint to load', required=True)
 parser.add_argument('--input_height',     type=int,   help='input height', default=256)
