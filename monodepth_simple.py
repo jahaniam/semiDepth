@@ -100,10 +100,12 @@ def main(_):
         do_stereo=False,
         wrap_mode="border",
         use_deconv=False,
-        alpha_image_loss=0,
+        alpha_image_loss =0,
         disp_gradient_loss_weight=0,
-        lr_loss_weight=0,
-        full_summary=False)
+        lr_loss_weight  = 0,
+        full_summary    = False,
+        lidar_weight    = 15.0,
+        do_gradient_fix = True)
 
     test_simple(params)
 
