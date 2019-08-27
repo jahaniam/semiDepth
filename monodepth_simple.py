@@ -26,6 +26,8 @@ from monodepth_model import *
 from monodepth_dataloader import *
 from average_gradients import *
 
+import cv2
+
 parser = argparse.ArgumentParser(description='Monodepth TensorFlow implementation.')
 
 parser.add_argument('--encoder',          type=str,   help='type of encoder, vgg or resnet50', default='resnet50-forward')
@@ -51,11 +53,11 @@ def test_simple(params):
 
     left  = tf.placeholder(tf.float32, [2, args.input_height, args.input_width, 3])
     # model = MonodepthModel(params, "test", left, None)
-    model = MonodepthModel(params, "test", left, None, None, None, None)
-
-    input_image = scipy.misc.imread(args.image_path, mode="RGB")
+    model = MonodepthModel(params, "test", left, None, None, None, None)    # Add None 
+    input_image = cv2.imread(args.image_path)                       # Change from scipy
+    input_image = cv2.cvtColor(input_image,cv2.COLOR_BGR2RGB)       # Add to convert from BGR to RGB
     original_height, original_width, num_channels = input_image.shape
-    input_image = scipy.misc.imresize(input_image, [args.input_height, args.input_width], interp='lanczos')
+    input_image = cv2.resize(input_image,(int(args.input_width),int(args.input_height)))    # Changed from scipy resize
     input_image = input_image.astype(np.float32) / 255
     input_images = np.stack((input_image, np.fliplr(input_image)), 0)
 
@@ -76,15 +78,15 @@ def test_simple(params):
     restore_path = args.checkpoint_path.split(".")[0]
     train_saver.restore(sess, restore_path)
 
-    disp = sess.run(model.disp_left_est[0], feed_dict={left: input_images})
+    disp = sess.run(model.invDepth_left_est[0], feed_dict={left: input_images}) # Changed from old 'disp_left_est' to 'invDepth_left_est'
     disp_pp = post_process_disparity(disp.squeeze()).astype(np.float32)
 
     output_directory = os.path.dirname(args.image_path)
     output_name = os.path.splitext(os.path.basename(args.image_path))[0]
 
     np.save(os.path.join(output_directory, "{}_disp.npy".format(output_name)), disp_pp)
-    disp_to_img = scipy.misc.imresize(disp_pp.squeeze(), [original_height, original_width])
-    plt.imsave(os.path.join(output_directory, "{}_disp.png".format(output_name)), disp_to_img, cmap='plasma')
+    disp_to_img = cv2.resize(disp_pp.squeeze(), (original_width, original_height)) # Changed from scipy resize
+    plt.imsave(os.path.join(output_directory, "{}_disp.png".format(output_name)), disp_to_img, cmap='jet')
 
     print('done!')
 
