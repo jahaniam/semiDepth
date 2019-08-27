@@ -57,6 +57,12 @@ python monodepth_main.py --mode test --data_path ~/data/KITTI/ \
 --filenames_file utils/filenames/eigen_test_files.txt --log_directory tmp/ \
 --checkpoint_path tmp/my_model/model-181250 --save_visualized
 ```
+
+## Testing on single image
+To test the network on one image you can use the `monodepth_simple.py` it should svae the output file with the same input file name+'_disp' in the same directory
+```shell
+python monodepth_simple.py --image /path-to-image --checkpoint_path /path-to-model
+```
 **Please note that there is NO extension after the checkpoint name**  
 
 This will create a file named invDepth.npy containing result. 
