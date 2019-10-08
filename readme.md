@@ -92,8 +92,6 @@ You can download our pre-trained model from links below:
 ## Results
 You can download the npy file containing result for the 697 eigen test files from [invDepth.npy](https://drive.google.com/file/d/1yvZsO-ZMmlz0LK6vLnH513FPM70OS1wQ/view?usp=sharing). We are filtering the 45 images which there is no annotation depth map for it in our evaluation python code using the file `eigen692_652_shared_index.txt`
 
-## Reference
-Under review at IROS2019
 
 ## Video
 [![Screenshot](https://img.youtube.com/vi/7ldCPJ60abw/0.jpg)](https://www.youtube.com/watch?v=7ldCPJ60abw)
